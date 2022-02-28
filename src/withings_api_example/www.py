@@ -1,5 +1,7 @@
 from flask import Flask, request, redirect
 import requests
+
+from weight_api import get_weight
 from withings_api_example import config
 
 app = Flask(__name__)
@@ -22,12 +24,12 @@ def get_code():
     payload = {'response_type': 'code',  # imposed string by the api
                'client_id': CLIENT_ID,
                'state': STATE,
-               'scope': 'user.info',  # see docs for enhanced scope
+               'scope': 'user.metrics',  # see docs for enhanced scope
                'redirect_uri': CALLBACK_URI,  # URL of this app
-               'mode': 'demo'  # Use demo mode, DELETE THIS FOR REAL APP
+               # 'mode': 'demo'  # Use demo mode, DELETE THIS FOR REAL APP
                }
 
-    r_auth = requests\
+    r_auth = requests \
         .get(
         'https://account.withings.com/oauth2_user/authorize2',
         params=payload
@@ -47,13 +49,13 @@ def get_token():
     code = request.args.get('code')
 
     payload = {
-               "action": "requesttoken",
-               'grant_type': 'authorization_code',
-               'client_id': CLIENT_ID,
-               'client_secret': CUSTOMER_SECRET,
-               'code': code,
-               'redirect_uri': CALLBACK_URI
-               }
+        "action": "requesttoken",
+        'grant_type': 'authorization_code',
+        'client_id': CLIENT_ID,
+        'client_secret': CUSTOMER_SECRET,
+        'code': code,
+        'redirect_uri': CALLBACK_URI
+    }
 
     r_token = requests.post(
         'https://wbsapi.withings.net/v2/oauth2',
@@ -63,15 +65,4 @@ def get_token():
 
     access_token = r_token.get('body', '').get('access_token', "")
 
-    # GET Some info with this token
-    headers = {'Authorization': 'Bearer ' + access_token}
-    payload = {'action': 'getdevice'}
-
-    # List devices of returned user
-    r_getdevice = requests.get(
-        f'https://wbsapi.withings.net/v2/user',
-        headers=headers,
-        params=payload
-    ).json()
-
-    return r_getdevice
+    return get_weight(access_token=access_token).json()
