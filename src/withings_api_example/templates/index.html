@@ -1,0 +1,45 @@
+<div style="display: flex; max-height: 1000px; max-width: 1000px;">
+    <canvas id="myChart" width="400" height="400"></canvas>
+</div>
+<script
+        src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+const datas = {{ data | tojson }}
+const ctx = document.getElementById('myChart').getContext('2d');
+
+const DATA_COUNT = 7;
+const NUMBER_CFG = {count: DATA_COUNT, min: -100, max: 100};
+
+const data = {
+  labels: datas.dates.sort((a,b) => (new Date(a))- (new Date(b))),
+  datasets: [
+    {
+      label: 'Weight Data',
+      data: datas.weights.reverse(),
+      borderColor: "red",
+      backgroundColor: "red",
+    },
+  ]
+};
+
+const config = {
+  type: 'line',
+  data: data,
+  options: {
+    //responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: false,
+        text: 'Chart.js Line Chart'
+      }
+    }
+  },
+};
+
+
+const myChart = new Chart(ctx, config);
+
+</script>

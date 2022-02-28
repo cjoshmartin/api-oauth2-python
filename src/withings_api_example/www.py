@@ -1,8 +1,11 @@
-from flask import Flask, request, redirect
+import datetime
+
+from flask import Flask, request, redirect, render_template, session
 import requests
 
 from weight_api import get_weight
 from withings_api_example import config
+from withings_api_example.weight_utils import kg_to_ibs, unit_conversion
 
 app = Flask(__name__)
 
@@ -64,5 +67,29 @@ def get_token():
         .json()
 
     access_token = r_token.get('body', '').get('access_token', "")
+    session["token"] = access_token
 
-    return get_weight(access_token=access_token).json()
+    return redirect('/chart')
+
+
+@app.route('/chart')
+def get_chart():
+    measurements = get_weight(access_token=session["token"]).json().get('body').get("measuregrps")
+
+    weights = []
+    dates = []
+
+    for measurement in measurements:
+        date = measurement.get('date')
+        for measure in measurement.get('measures'):
+            unit = measure.get('unit')
+            value = measure.get('value')
+            type = measure.get('type')
+
+            converted_date = datetime.datetime.fromtimestamp(date)
+
+            if type == 1:
+                dates.append(converted_date.strftime('%m/%d/%y'))
+                weights.append(round(kg_to_ibs(unit_conversion(unit, value)), 2))
+
+    return render_template('index.html', data={'weights': weights, "dates": dates})
